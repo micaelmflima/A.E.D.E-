@@ -2,6 +2,9 @@ import unittest
 from io import BytesIO
 from email.message import Message
 from openpyxl import Workbook
+from datetime import date
+import csv
+from io import StringIO
 import server
 
 def workbook(rows):
@@ -11,6 +14,53 @@ def workbook(rows):
     result = BytesIO(); book.save(result); return result.getvalue()
 
 class AnalysisTests(unittest.TestCase):
+    def test_csv_formats_and_percentages(self):
+        for delimiter in (',', ';', '\t'):
+            text = StringIO(newline='')
+            writer = csv.writer(text, delimiter=delimiter)
+            writer.writerow(['Aluno_ID','Nome','Turma','Presença_1tri','Media_1tri'])
+            writer.writerow(['a','Ana; Silva','1A','87,5%','7,2'])
+            result=server.analyze(text.getvalue().encode('utf-8-sig'),1)
+            self.assertEqual(result['students'][0]['attendance'],87.5)
+            self.assertEqual(result['students'][0]['grade'],7.2)
+
+    def test_csv_inactive_at_period_end(self):
+        content=('Aluno_ID,Nome,Turma,Ano_Referencia,Presença_1tri,Media_1tri,Data_Corte_1tri,Data_Evasao\n'
+                 'a,Ana,1A,2024,.9,8,2024-05-17,2024-05-17\n'
+                 'b,Bia,1A,2024,.8,7,2024-05-17,2024-05-18\n').encode()
+        result=server.analyze(content,1)
+        self.assertEqual(result['inactive'],1)
+        self.assertEqual([s['id'] for s in result['students']],['b'])
+        self.assertEqual(result['years'],['2024'])
+
+    def test_excel_calendar_and_outcomes(self):
+        book=Workbook(); sheet=book.active; sheet.title='Alunos_Modelo'
+        sheet.append(['Aluno_ID','Nome','Turma','Presença_1tri','Media_1tri'])
+        sheet.append(['a','Ana','1A',.9,8]); sheet.append(['b','Bia','1A',.9,8])
+        cal=book.create_sheet('Calendario'); cal.append(['Data','Trimestre'])
+        cal.append([date(2024,2,5),1]); cal.append([date(2024,5,17),1])
+        outcomes=book.create_sheet('Desfechos'); outcomes.append(['Aluno_ID','Data_Evasao'])
+        outcomes.append(['a',date(2024,5,17)]); outcomes.append(['b',None])
+        stream=BytesIO(); book.save(stream)
+        result=server.analyze(stream.getvalue(),1)
+        self.assertEqual(result['inactive'],1)
+        self.assertEqual(result['students'][0]['year'],'2024')
+
+    def test_class_context_does_not_mix_years(self):
+        text=StringIO(newline=''); writer=csv.writer(text)
+        writer.writerow(['Aluno_ID','Nome','Turma','Ano_Referencia','Presença_1tri','Media_1tri','Presença_2tri','Media_2tri'])
+        for year,delta in [(2023,0),(2024,3)]:
+            for i in range(3): writer.writerow([f'{year}-{i}','Nome','1A',year,.9,8,.9,8-delta])
+        result=server.analyze(text.getvalue().encode(),2)
+        self.assertEqual({s['context'] for s in result['students'] if s['year']=='2023'},{0.0})
+        self.assertEqual({s['context'] for s in result['students'] if s['year']=='2024'},{100.0})
+
+    def test_csv_rejects_duplicate_headers_bad_dates_and_wrong_table(self):
+        for text in ['Aluno_ID,Aluno_ID,Nome,Turma,Presença_1tri,Media_1tri\na,a,A,T,.9,7\n',
+                     'Aluno_ID,Nome,Turma,Presença_1tri,Media_1tri,Data_Evasao\na,A,T,.9,7,17/05/2024\n',
+                     'Aluno_ID,Data,Trimestre\na,2024-02-05,1\n']:
+            with self.assertRaises(ValueError): server.analyze(text.encode(),1)
+
     def test_score_range_and_order(self):
         content = workbook([['a','Ana','A',.95,8,.9,7],['b','Bia','A',.5,5,.4,4]])
         for period in (1, 2):

@@ -19,7 +19,7 @@ async function analyze(){
  $('#file-name').textContent='Analisando planilha...';
  const form=new FormData();form.append('arquivo',activeFile);form.append('periodo',$('#period').value);
  try{const response=await fetch('/api/analisar',{method:'POST',body:form});const result=await response.json();if(request!==requestNumber)return;if(!response.ok)throw Error(result.error);data=result.students;
- $('#file-name').textContent=`✓ ${activeFile.name}`;$('#period-label').textContent=`${result.period}º trimestre`;
+ $('#file-name').textContent=`✓ ${activeFile.name}`;$('#period-label').textContent=`${(result.years||[]).join(', ')}${result.years?.length?' · ':''}${result.period}º trimestre`;
  $('#total').textContent=data.length;$('#attention').textContent=data.filter(x=>x.score>=30).length;
  $('#frequency').textContent=data.length?pct(data.reduce((n,x)=>n+x.attendance,0)/data.length):'—';
  $('#skipped').textContent=result.inactive?`${result.inactive} fora do período`:'';
@@ -30,7 +30,7 @@ async function analyze(){
 }
 $('#file').addEventListener('change',e=>{activeFile=e.target.files[0];datasetKey=activeFile?`${activeFile.name}:${activeFile.size}:${activeFile.lastModified}`:'';analyze()});$('#period').addEventListener('change',analyze);['#search','#class-filter','#filter'].forEach(s=>$(s).addEventListener('input',render));
 $('#rows').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;selected=data.find(x=>x.id===b.dataset.id);const s=selected;
- $('#detail-name').textContent=s.name;$('#detail-id').textContent=`${s.id} · ${s.class} ${s.series}`;
+ $('#detail-name').textContent=s.name;$('#detail-id').textContent=`${s.id} · ${s.class}${s.year?' · '+s.year:''}`;
  $('#detail-body').innerHTML=`<div class="detail-score"><div><small>ÍNDICE DE ATENÇÃO</small><strong>${pct(s.score)}</strong><p>Resultado experimental para apoiar a análise.</p></div><div class="round">${pct(s.score)}</div></div><div class="detail-grid"><div><small>FREQUÊNCIA</small><strong>${pct(s.attendance)}</strong></div><div><small>MÉDIA ATUAL</small><strong>${s.grade.toLocaleString('pt-BR')}</strong></div><div><small>MÉDIA ANTERIOR</small><strong>${s.priorGrade===null?'Não disponível':s.priorGrade.toLocaleString('pt-BR')}</strong></div></div><div class="explanation"><strong>Como ler este indicador</strong><p>O modelo identifica padrões de frequência e notas em uma base fictícia. Resultado individual: ${pct(s.model)}. ${s.context===null?'Comparação coletiva indisponível; o índice mostra apenas o resultado individual.':`Indicador coletivo da turma: ${pct(s.context)}. O índice combina 80% individual e 20% coletivo.`}</p><p>Os números não são uma chance comprovada de evasão. Confira os dados e converse com o estudante antes de agir.</p></div>`;
  try{$('#note').value=localStorage.getItem('aede:note:'+datasetKey+':'+s.id)||''}catch{$('#note').value=''};$('#saved').textContent='';$('#dialog').showModal();});
 $('#close').onclick=()=>$('#dialog').close();$('#dialog').addEventListener('click',e=>{if(e.target===$('#dialog'))$('#dialog').close()});
