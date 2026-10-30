@@ -199,7 +199,7 @@ def analyze(content, period):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        routes = {'/': 'index.html', '/app.js':'app.js', '/style.css':'style.css', '/logo.png':'logo.png'}
+        routes = {'/': 'index.html', '/index.html':'index.html', '/app.js':'app.js', '/analysis.js':'analysis.js', '/vendor/xlsx.full.min.js':'vendor/xlsx.full.min.js', '/style.css':'style.css', '/logo.png':'logo.png'}
         target = routes.get(self.path.split('?')[0])
         if not target: self.send_error(404); return
         data = (ROOT / target).read_bytes()

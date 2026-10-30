@@ -17,8 +17,7 @@ async function analyze(){
  $('#class-filter').innerHTML='<option value="">Todas as turmas</option>';$('#class-filter').value='';render();
  if(!activeFile){$('#file-name').textContent='Nenhum arquivo selecionado';return;}
  $('#file-name').textContent='Analisando planilha...';
- const form=new FormData();form.append('arquivo',activeFile);form.append('periodo',$('#period').value);
- try{const response=await fetch('/api/analisar',{method:'POST',body:form});const result=await response.json();if(request!==requestNumber)return;if(!response.ok)throw Error(result.error);data=result.students;
+ try{const result=await AedeAnalysis.analyze(activeFile,$('#period').value);if(request!==requestNumber)return;data=result.students;
  $('#file-name').textContent=`✓ ${activeFile.name}`;$('#period-label').textContent=`${(result.years||[]).join(', ')}${result.years?.length?' · ':''}${result.period}º trimestre`;
  $('#total').textContent=data.length;$('#attention').textContent=data.filter(x=>x.score>=30).length;
  $('#frequency').textContent=data.length?pct(data.reduce((n,x)=>n+x.attendance,0)/data.length):'—';

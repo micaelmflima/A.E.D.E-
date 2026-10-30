@@ -1,6 +1,12 @@
 # A.E.D.E. — MVP de acompanhamento estudantil
 
-Aplicação local para importar arquivos `.xlsx` e `.csv`, visualizar indicadores experimentais e registrar ações de acompanhamento. A nova coorte fictícia de 2024 está em `../outputs/base_2024`, junto ao notebook e à metodologia.
+Aplicação para importar arquivos `.xlsx` e `.csv`, visualizar indicadores experimentais e registrar ações de acompanhamento. Funciona no GitHub Pages: https://micaelmflima.github.io/A.E.D.E-/ . A nova coorte fictícia de 2024 está no pacote de dados entregue separadamente.
+
+## Usar pelo GitHub Pages
+
+Abra o endereço acima e clique em **Selecionar arquivo**. A leitura do Excel/CSV e o cálculo são executados no navegador, sem envio do arquivo ao servidor e sem Python. Os scripts, o estilo e a imagem usam caminhos relativos para funcionar na pasta do projeto. A biblioteca SheetJS 0.20.3 está incluída em `vendor/`, com sua licença; não é baixada de um CDN durante o uso. As anotações continuam salvas apenas no navegador.
+
+Para verificar a implementação: `node test_analysis.cjs` e `node test_app.cjs`. Quando o pacote da coorte e o arquivo de resultados de referência estiverem disponíveis na pasta pai, o teste de análise também compara as nove importações com os resultados do Python.
 
 ## Executar
 
@@ -14,7 +20,7 @@ pip install -r requirements.txt
 python server.py
 ```
 
-Abra <http://127.0.0.1:8000> e importe uma planilha fictícia compatível. Selecione o trimestre desejado. O servidor aceita arquivos de até 12 MB; o processamento ocorre localmente e os uploads não são gravados. As anotações ficam no armazenamento do navegador.
+Abra <http://127.0.0.1:8000> e importe uma planilha fictícia compatível. Selecione o trimestre desejado. A interface aceita arquivos de até 12 MB e processa os dados no navegador. O servidor Python permanece disponível como alternativa local e mantém a API anterior para testes e integrações.
 
 Neste computador, também é possível iniciar pelo PowerShell com `./iniciar.ps1`, usando o Python e as bibliotecas disponíveis no ambiente do Codex. Mantenha a janela aberta enquanto usa o site; pressione Ctrl+C para encerrar.
 

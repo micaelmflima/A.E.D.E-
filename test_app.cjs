@@ -6,7 +6,7 @@ const ids=['search','class-filter','filter','rows','error','file-name','period',
 const elements=Object.fromEntries(ids.map(id=>[id,{value:'',textContent:'',innerHTML:'',hidden:false,open:false,events:{},addEventListener(name,fn){this.events[name]=fn},showModal(){this.open=true},close(){this.open=false}}]));
 elements['period'].value='1';elements['filter'].value='all';
 const stored={};let result;
-const ctx={document:{querySelector:s=>elements[s.slice(1)]},FormData:class{append(){}},fetch:async()=>({ok:true,json:async()=>result}),localStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>{stored[k]=v}},console};
+const ctx={document:{querySelector:s=>elements[s.slice(1)]},AedeAnalysis:{analyze:async()=>result},localStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>{stored[k]=v}},console};
 vm.createContext(ctx);vm.runInContext(readFileSync('app.js','utf8'),ctx);
 const one={id:'X1',name:'Ana & Silva',class:'1A',series:'1º',year:'2024',attendance:80,grade:6,priorGrade:null,score:34,model:34,context:null};
 async function run(){
@@ -24,11 +24,11 @@ async function run(){
  assert.equal(elements.dialog.open,true);assert.equal(elements['detail-name'].textContent,'Ana & Silva');
  assert.match(elements['detail-id'].textContent,/2024/);
  elements.note.value='Conversar com o estudante';elements['save-note'].onclick();assert.match(elements.saved.textContent,/Salvo/);
- let finish;ctx.fetch=()=>new Promise(resolve=>{finish=resolve});
+ let finish;ctx.AedeAnalysis.analyze=()=>new Promise(resolve=>{finish=resolve});
  elements.file.events.change({target:{files:[{name:'outra.xlsx',size:12,lastModified:8}]}});
  assert.equal(elements.dialog.open,false);assert.equal(elements.total.textContent,'—');assert.doesNotMatch(elements.rows.innerHTML,/Ana/);
- finish({ok:true,json:async()=>({students:[one],missing:[],inactive:0,period:1})});await new Promise(setImmediate);
- ctx.fetch=async()=>({ok:true,json:async()=>result});
+ finish({students:[one],missing:[],inactive:0,period:1});await new Promise(setImmediate);
+ ctx.AedeAnalysis.analyze=async()=>result;
  result={students:[],missing:[{id:'X2',name:'Bia',class:'1A'}],inactive:0,period:2};
  elements.period.value='2';await elements.period.events.change();
  assert.equal(elements.frequency.textContent,'—');assert.match(elements.rows.innerHTML,/Não há indicadores disponíveis/);
